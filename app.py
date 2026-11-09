@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ─────────────────────────────────────────────
 # 0. 기본 설정
@@ -167,6 +168,10 @@ st.markdown(
     .comment b { font-size:13px; }
     .badge { display:inline-block; background:#262B52; color:#E3E6F7; border:1px solid #4A5088; border-radius:999px; padding:4px 12px; margin:4px 6px 0 0; font-size:13px; }
     .note { border:1.5px solid #DDE0EC; border-radius:14px; padding:14px 16px; font-size:14px; color:#5B6078; line-height:1.7; }
+    /* 버튼·선택 표시 색을 남색/파랑으로 (기본 빨강 대신) */
+    .stButton button[kind="primary"] { background:#1B1F3B; border-color:#1B1F3B; color:#FFFFFF; }
+    .stButton button[kind="primary"]:hover { background:#2A3060; border-color:#2A3060; color:#FFFFFF; }
+    input[type="radio"], input[type="checkbox"] { accent-color:#3D5AFE; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -598,3 +603,15 @@ PAGE_FUNCS = {
 }
 
 PAGE_FUNCS[PAGES[st.session_state.page]]()
+
+# 다음 화면으로 넘어가면 맨 위부터 보이게 스크롤 올리기
+components.html(
+    f"""<script>
+    // page {st.session_state.page}
+    const doc = window.parent.document;
+    ['[data-testid="stMain"]', '[data-testid="stAppViewContainer"]', 'section.main', '.main']
+      .forEach(sel => {{ const el = doc.querySelector(sel); if (el) el.scrollTo(0, 0); }});
+    window.parent.scrollTo(0, 0);
+    </script>""",
+    height=0,
+)
