@@ -36,7 +36,7 @@ LIKERT_AGREE = ["매우 동의", "약간 동의", "약간 비동의", "전혀 �
 A_CHOICES = ["확인할 수 있음", "짐작한 내용"]
 
 E_ITEMS = [
-    ("E1", "온라인 커뮤니티에서 새롭게 접하는 특정 주제에 대한 부정적인 의견에 많은 사람이 동의한다면, 단순한 편견만으로 그런 여론이 형성되었다고 보기는 어렵다고 생각한다."),
+    ("E1", "온라인 커뮤니티에서 특정 주제에 대한 부정적인 의견에 다수가 동의하는 데에는 단순한 편견 이상의 이유가 있을 수 있다고 생각한다."),
     ("E2", "해외에 거주한 경험이 있는 사람은 새로운 환경에 적응을 잘 할 가능성이 높다고 생각한다."),
     ("E3", "특정 집단의 일부가 사회적으로 비판받는 행동을 했다면, 그 집단의 다른 사람도 비슷한 행동을 했을/할 가능성이 있다고 생각한다."),
     ("E4", "나는 SNS 및 온라인 커뮤니티에서 얻은 정보를 쉽게 수용하는 편이다."),
@@ -83,7 +83,7 @@ A3_ITEMS = [
 COMMENT = "워홀 다녀온 여자는 거르라던데"
 B1_TEXT = "이 댓글의 의견에 어느 정도 동의하나요?"
 B_STATEMENTS = [  # B1 다음 순서 (수위 낮은 것 → 높은 것)
-    ("B7", "온라인에서 워홀 여성에 대해 떠도는 부정적인 반응들이 완전히 근거 없는 소문만은 아닐 것이라고 생각한다."),
+    ("B7", "온라인에서 워홀 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다."),
     ("B2", "다른 정보가 없더라도 워킹홀리데이 경험을 이유로 그 여성을 교제 상대로 꺼리는 것은 타당하다고 생각한다."),
     ("B4", "워킹홀리데이를 다녀온 일부 여성에게서 부정적인 사례가 실제로 나타났다면, 워킹홀리데이를 다녀온 여성 전체를 부정적으로 평가하는 것은 타당하다."),
     ("B5", "워홀을 다녀온 여성이라는 사실만으로 그 여성의 사생활을 평가하는 것은 어느 정도 이해가 된다."),
@@ -233,14 +233,9 @@ def score_a_radio(items):
     return sum(1 for k, _, key in items if (ans[k] == "짐작한 내용") == (key == "infer"))
 
 
-def score_a_checkbox(items):
-    # 체크 = '짐작한 내용'으로 고름. 짐작 문장은 체크, 사실 문장은 미체크가 정답
-    return sum(1 for k, _, key in items if bool(ans[k]) == (key == "infer"))
-
-
 def compute_scores():
     s = {}
-    s["A1"] = score_a_checkbox(A1_ITEMS)
+    s["A1"] = score_a_radio(A1_ITEMS)
     s["A2"] = score_a_radio(A2_ITEMS)
     s["A_pre_rate"] = (s["A1"] + s["A2"]) / 10
 
@@ -298,7 +293,7 @@ def compute_post_scores():
     return {
         "A3": score_a_radio(A3_ITEMS),
         "A3_rate": score_a_radio(A3_ITEMS) / 5,
-        "A1_rate": score_a_checkbox(A1_ITEMS) / 5,
+        "A1_rate": score_a_radio(A1_ITEMS) / 5,
         "P_B7_score": likert("P_B7", LIKERT_AGREE),
     }
 
@@ -320,7 +315,7 @@ def build_row():
     for k in ANSWER_KEYS:
         v = ans.get(k)
         if isinstance(v, bool):
-            v = int(v)                      # 체크박스: 체크=1, 미체크=0
+            v = int(v)
         elif isinstance(v, float) and v.is_integer():
             v = int(v)                      # 나이 23.0 → 23
         row[k] = "" if v is None else v
@@ -418,11 +413,11 @@ def page_A1():
     part("PART 2 · 장면 속 판단")
     st.markdown("#### 9. 서연 (24세)")
     st.markdown(f'<div class="card">{A1_STORY}</div>', unsafe_allow_html=True)
-    st.write("아래 문장 중, 위 내용을 통해 **짐작한 내용**을 모두 골라주세요.")
+    st.write("아래 문장이 위 내용만으로 **확인할 수 있는 것**인지, **짐작한 것**인지 골라주세요.")
     for k, text, _ in A1_ITEMS:
-        st.checkbox(text, key=k)
+        st.radio(text, A_CHOICES, index=None, key=k, horizontal=True)
     keys = [k for k, _, _ in A1_ITEMS]
-    next_button("다음", keys)  # 체크박스는 '안 고름'도 응답이라 필수 확인 없음
+    next_button("다음", keys, keys)
 
 
 def page_B():
@@ -538,9 +533,16 @@ def page_I3():
     st.markdown('<div class="comment" style="border-color:#E4B4B4"><b>방구석악플러1</b><br>'
                 '여자들 워홀 가서 하는 짓 뻔하지 않나? ㅋㅋ 나중에 결혼하기 전에 워홀 갔다 왔다고 하면 알아서 걸러야 함.</div>',
                 unsafe_allow_html=True)
-    st.text_area("**악플러의 근거를 생각해 보고, 직접 반박 댓글을 달아 주세요!**", key="I3_rebuttal",
-                 placeholder="한두 문장이면 충분해요", height=120)
-    st.caption("※ 욕설이나 과격한 표현은 쓰지 말아 주세요. 근거를 짚는 것만으로도 충분해요.")
+    st.markdown(
+        '<div class="note" style="border-color:#3D5AFE;background:#EEF1FF;color:#1B1F3B">'
+        '<b>💡 먼저, <span class="mark">악플러의 근거</span>를 생각해 보세요.</b><br>'
+        '이 댓글은 무엇을 근거로 이런 말을 하고 있을까요? 그 근거로 동생을 판단할 수 있을까요?</div>',
+        unsafe_allow_html=True,
+    )
+    st.write("")
+    st.text_area("**그 근거를 짚어서, 직접 반박 댓글을 달아 주세요! (최소 한 문장)**", key="I3_rebuttal",
+                 placeholder="최소 한 문장 이상 적어주세요", height=120)
+    st.caption("※ 욕설이나 과격한 표현은 쓰지 말아 주세요.")
     next_button("답글 등록하기", ["I3_rebuttal"], ["I3_rebuttal"])
 
 
@@ -558,7 +560,7 @@ def page_I4():
 
 def page_P1():
     part("마지막 질문 1 / 2")
-    st.radio("**온라인에서 워홀 여성에 대해 떠도는 부정적인 반응들이 완전히 근거 없는 소문만은 아닐 것이라고 생각한다.**",
+    st.radio("**온라인에서 워홀 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다.**",
              LIKERT_AGREE, index=None, key="P_B7", horizontal=True)
     st.divider()
     st.markdown("#### 하은 (26세)")
