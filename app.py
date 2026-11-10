@@ -83,7 +83,7 @@ A3_ITEMS = [
 COMMENT = "워홀 다녀온 여자는 거르라던데"
 B1_TEXT = "이 댓글의 의견에 어느 정도 동의하나요?"
 B_STATEMENTS = [  # B1 다음 순서 (수위 낮은 것 → 높은 것)
-    ("B7", "온라인에서 워홀 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다."),
+    ("B7", "온라인에서 워킹홀리데이 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다."),
     ("B2", "다른 정보가 없더라도 워킹홀리데이 경험을 이유로 그 여성을 교제 상대로 꺼리는 것은 타당하다고 생각한다."),
     ("B4", "워킹홀리데이를 다녀온 일부 여성에게서 부정적인 사례가 실제로 나타났다면, 워킹홀리데이를 다녀온 여성 전체를 부정적으로 평가하는 것은 타당하다."),
     ("B5", "워홀을 다녀온 여성이라는 사실만으로 그 여성의 사생활을 평가하는 것은 어느 정도 이해가 된다."),
@@ -97,13 +97,13 @@ C2_OPTS = ["친구의 말에 동의하는 반응을 남긴다.", "읽기만 하�
 C2R_OPTS = ["글 내용에 어느 정도 동의해서", "친구 사이에 분위기를 어색하게 만들고 싶지 않아서", "말해도 바뀌지 않을 것 같아서", "관심 없는 주제라서", "기타"]
 
 D_ITEMS = [  # 순서: D1 → D3 → D2
-    ("D1", "한국 사회는 워홀 여성을 교제 혹은 결혼의 대상으로서 꺼린다고 생각한다."),
+    ("D1", "한국 사회는 워킹홀리데이 여성을 교제 혹은 결혼의 대상으로서 꺼린다고 생각한다."),
     ("D3", "한국 사회에서는 워킹홀리데이를 경험한 여성의 사생활이 본인의 능력이나 경험보다 더 주목받는 경향이 있다고 생각한다."),
     ("D2", "채용 담당자들은 이력서에 적힌 여성의 해외 워홀 경험을 '글로벌 역량'이나 '자립심'보다는 '단순 도피'나 '스펙을 빙자한 유흥'으로 해석하는 경향이 있다."),
 ]
 
 PRE_BIAS_OPTS = ["아예 없다", "거의 없다", "중간", "조금 있다", "많이 있다"]
-CHANGE_OPTS = ["긍정적으로 변했다", "조금 변했다", "변화하지 않았다", "부정적으로 변했다"]
+CHANGE_OPTS = ["긍정적으로 변화", "변화하지 않음", "부정적으로 변화"]
 GENDER_OPTS = ["남성", "여성"]
 
 RESULT_TYPES = {
@@ -122,13 +122,13 @@ RESULT_TYPES = {
     "novelist": {
         "name": "선의의 소설가",
         "tagline": "빈칸을 보면 일단 따뜻한 이야기로 채워 넣는 사람",
-        "tendency": "워홀 여성에 대한 부정적인 이야기에는 잘 동의하지 않았어요. 다만 정보에 없는 내용도 '확인 가능'으로 고른 경우가 있었어요.",
+        "tendency": "워킹홀리데이 여성에 대한 부정적인 이야기에는 잘 동의하지 않았어요. 다만 정보에 없는 내용도 '확인 가능'으로 고른 경우가 있었어요.",
         "next": "좋은 쪽으로 채운 빈칸도, 나쁜 쪽으로 채운 빈칸과 출발점은 같아요. 그 사람이 독립적인지, 성실한지는 이 정보만으로는 알 수 없어요. 그리고 누군가를 존중하는 데 그 사람이 '좋은 사람임을 증명할' 필요는 없어요.",
     },
     "rumor_bag": {
         "name": "카더라 보따리",
         "tagline": "확인 안 된 이야기도 일단 보따리에 넣고 보는 사람",
-        "tendency": "정보에 없는 내용을 '확인 가능'으로 고른 경우가 있었고, 워홀 여성에 대한 일부 이야기에도 동의하는 쪽을 골랐어요. 정보가 비어 있을 때, 들어본 이야기가 그 자리를 채웠을 수 있어요.",
+        "tendency": "정보에 없는 내용을 '확인 가능'으로 고른 경우가 있었고, 워킹홀리데이 여성에 대한 일부 이야기에도 동의하는 쪽을 골랐어요. 정보가 비어 있을 때, 들어본 이야기가 그 자리를 채웠을 수 있어요.",
         "next": "이건 이상한 게 아니에요. 정보가 부족하면 사람의 머리는 들어본 이야기로 빈칸을 채우곤 해요. 지금 알아차렸다면, 다음엔 그 이야기의 출처가 어디였는지부터 다시 살펴보세요.",
     },
 }
@@ -194,8 +194,12 @@ if "page" not in st.session_state:
 ans = st.session_state.answers
 
 
-def go_next(keys, required):
+def go_next(keys, required, from_page):
     """현재 화면의 응답을 확인하고 저장한 뒤 다음 화면으로 이동."""
+    # 버튼을 빠르게 두 번 누르면 클릭이 두 번 처리돼서 한 페이지를 건너뛰거나
+    # 마지막 페이지를 넘어가 버림 → 이미 넘어간 클릭은 무시
+    if st.session_state.page != from_page:
+        return
     missing = [k for k in required if st.session_state.get(k) in (None, "")]
     if missing:
         st.session_state.error = "아직 답하지 않은 문항이 있어요."
@@ -203,14 +207,14 @@ def go_next(keys, required):
     for k in keys:
         ans[k] = st.session_state.get(k)
     st.session_state.error = None
-    st.session_state.page += 1
+    st.session_state.page = min(from_page + 1, len(PAGES) - 1)
 
 
 def next_button(label, keys=(), required=()):
     if st.session_state.error:
         st.warning(st.session_state.error)
     st.button(label, type="primary", width="stretch",
-              on_click=go_next, args=(list(keys), list(required)))
+              on_click=go_next, args=(list(keys), list(required), st.session_state.page))
 
 
 def part(label):
@@ -373,7 +377,7 @@ def page_start():
     st.markdown(
         '<div class="hero"><p>짧은 정보만 보고 사람을 판단할 때</p>'
         '<h1>더 커뮤니티:<br><span class="mark">워홀녀편</span></h1>'
-        '</div>',
+        '<p>주어진 상황과 SNS 게시물을 보고 판단해보세요.</p></div>',
         unsafe_allow_html=True,
     )
     st.info("정답을 맞히는 시험이 아니에요. 오래 고민하지 말고 떠오르는 대로 골라주세요.  \n약 10분 · 익명")
@@ -411,7 +415,7 @@ def page_A2():
 def page_A1():
     progress(0.43)
     part("PART 2 · 장면 속 판단")
-    st.markdown("#### 9. 서연 (24세)")
+    st.markdown("#### 9. 서연 (24세, 여성)")
     st.markdown(f'<div class="card">{A1_STORY}</div>', unsafe_allow_html=True)
     st.write("아래 문장이 위 내용만으로 **확인할 수 있는 것**인지, **짐작한 것**인지 골라주세요.")
     for k, text, _ in A1_ITEMS:
@@ -560,10 +564,10 @@ def page_I4():
 
 def page_P1():
     part("마지막 질문 1 / 2")
-    st.radio("**온라인에서 워홀 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다.**",
+    st.radio("**온라인에서 워킹홀리데이 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다.**",
              LIKERT_AGREE, index=None, key="P_B7", horizontal=True)
     st.divider()
-    st.markdown("#### 하은 (26세)")
+    st.markdown("#### 하은 (26세, 여성)")
     st.markdown(f'<div class="card">{A3_STORY}</div>', unsafe_allow_html=True)
     st.write("아래 문장이 위 내용만으로 **확인할 수 있는 것**인지, **짐작한 것**인지 골라주세요.")
     for k, text, _ in A3_ITEMS:
@@ -574,9 +578,9 @@ def page_P1():
 
 def page_P2():
     part("마지막 질문 2 / 2")
-    st.radio("**이 테스트를 하기 전, 워홀 여성에 대한 내 편견은 어느 정도였다고 생각하나요?**",
+    st.radio("**이 테스트를 하기 전, 워킹홀리데이 여성에 대한 내 편견은 어느 정도였다고 생각하나요?**",
              PRE_BIAS_OPTS, index=None, key="P_prebias", horizontal=True)
-    st.radio("**이 테스트 후 워킹홀리데이 여성에 대한 내 편견은 어떻게 바뀌었나요?**",
+    st.radio("**이 테스트 후 워킹홀리데이 여성에 대한 내 인식은 어떻게 바뀌었나요?**",
              CHANGE_OPTS, index=None, key="P_change", horizontal=True)
     st.text_area("**지금까지 테스트를 하며 느낀 점을 간단하게 적어주세요.**", key="P_feel", height=100)
     st.divider()
@@ -590,8 +594,8 @@ def page_P2():
 
 def page_end():
     save_response()
-    st.markdown('<div class="hero"><h1>참여해줘서<br><span class="mark">고마워요</span></h1>'
-                '<p>응답이 저장됐어요. 마지막으로 이 테스트에 대해 알려드릴게요.</p></div>',
+    st.markdown('<div class="hero"><h1>참여해주셔서<br><span class="mark">감사합니다</span></h1>'
+                '<p>마지막으로 이 테스트에 대해 알려드릴게요.</p></div>',
                 unsafe_allow_html=True)
     st.markdown("""
 **연구 안내**
@@ -607,6 +611,7 @@ PAGE_FUNCS = {
     "P1": page_P1, "P2": page_P2, "end": page_end,
 }
 
+st.session_state.page = min(st.session_state.page, len(PAGES) - 1)  # 안전장치
 PAGE_FUNCS[PAGES[st.session_state.page]]()
 
 # 다음 화면으로 넘어가면 맨 위부터 보이게 스크롤 올리기
