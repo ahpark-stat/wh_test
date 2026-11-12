@@ -26,7 +26,7 @@ RESPONSES_CSV = APP_DIR / "responses.csv"
 
 # 결과 유형 기준값 (파일럿 후 조정)
 A_CUTOFF = 0.8   # A 정답률 80% 이상 = 구별 잘함
-B_CUTOFF = 2.5   # B 평균 2.5 이상 = 동의 높음
+B_AGREE_MIN = 2  # B 7문항 중 '약간 동의' 이상을 2개 이상 고르면 = 동의 높음
 
 # ─────────────────────────────────────────────
 # 1. 문항 정의 (문구를 바꿀 땐 여기만 고치면 됨)
@@ -86,7 +86,7 @@ B_STATEMENTS = [  # B1 다음 순서 (수위 낮은 것 → 높은 것)
     ("B7", "온라인에서 워킹홀리데이 여성에 대해 떠도는 부정적인 소문에는 어느 정도 근거가 있을 것이라고 생각한다."),
     ("B2", "다른 정보가 없더라도 워킹홀리데이 경험을 이유로 그 여성을 교제 상대로 꺼리는 것은 타당하다고 생각한다."),
     ("B4", "워킹홀리데이를 다녀온 일부 여성에게서 부정적인 사례가 실제로 나타났다면, 워킹홀리데이를 다녀온 여성 전체를 부정적으로 평가하는 것은 타당하다."),
-    ("B5", "워홀을 다녀온 여성이라는 사실만으로 그 여성의 사생활을 평가하는 것은 어느 정도 이해가 된다."),
+    ("B5", "워킹홀리데이를 다녀온 여성이라는 사실만으로 그 여성의 사생활을 평가하는 것은 어느 정도 이해가 된다."),
     ("B3", "워킹홀리데이를 다녀온 여성에 대한 사회적 시선이 안 좋은 것은, 그들 스스로가 제공한 원인도 크다."),
     ("B6", "워킹홀리데이 중 이성과 자유롭게 교류하는 행동은 남성보다 여성의 경우 더 부정적으로 평가받을 만하다고 생각한다."),
 ]
@@ -99,7 +99,7 @@ C2R_OPTS = ["글 내용에 어느 정도 동의해서", "친구 사이에 분위
 D_ITEMS = [  # 순서: D1 → D3 → D2
     ("D1", "한국 사회는 워킹홀리데이 여성을 교제 혹은 결혼의 대상으로서 꺼린다고 생각한다."),
     ("D3", "한국 사회에서는 워킹홀리데이를 경험한 여성의 사생활이 본인의 능력이나 경험보다 더 주목받는 경향이 있다고 생각한다."),
-    ("D2", "채용 담당자들은 이력서에 적힌 여성의 해외 워홀 경험을 '글로벌 역량'이나 '자립심'보다는 '단순 도피'나 '스펙을 빙자한 유흥'으로 해석하는 경향이 있다."),
+    ("D2", "채용 담당자들은 이력서에 적힌 여성의 해외 워킹홀리데이 경험을 '글로벌 역량'이나 '자립심'보다는 '단순 도피'나 '스펙을 빙자한 유흥'으로 해석하는 경향이 있다."),
 ]
 
 PRE_BIAS_OPTS = ["아예 없다", "거의 없다", "중간", "조금 있다", "많이 있다"]
@@ -162,6 +162,11 @@ st.markdown(
     .hero h1 { font-family:'Black Han Sans', sans-serif; font-weight:400; font-size:40px; line-height:1.2; margin:0 0 10px; color:#FFFFFF; }
     .hero p { color:#E3E6F7; margin:0; line-height:1.6; }
     .mark { background:#FFE45C; color:#1B1F3B; padding:0 6px; }
+    /* 결과 화면: 아직 안 끝났다는 안내 + 노란 버튼 */
+    .notdone { background:#FFE45C; color:#1B1F3B; border-radius:14px; padding:14px 16px; margin-bottom:14px; line-height:1.6; font-weight:500; }
+    .notdone b { font-size:17px; }
+    .st-key-result_next button { background:#FFE45C !important; border:2px solid #1B1F3B !important; color:#1B1F3B !important; font-weight:700; min-height:56px; }
+    .st-key-result_next button:hover { background:#FFD60A !important; }
     .part { display:inline-block; font-size:12px; font-weight:700; color:#3D5AFE; background:#E3E8FF; padding:4px 10px; border-radius:8px; margin-bottom:8px; }
     .card { background:#FFFFFF; border:1px solid #DDE0EC; border-radius:14px; padding:16px; margin:8px 0 14px; line-height:1.7; color:#1B1F3B; }
     .comment { background:#FFFFFF; border:1px solid #DDE0EC; border-radius:14px; padding:12px 16px; margin:8px 0 14px; color:#1B1F3B; }
@@ -210,10 +215,10 @@ def go_next(keys, required, from_page):
     st.session_state.page = min(from_page + 1, len(PAGES) - 1)
 
 
-def next_button(label, keys=(), required=()):
+def next_button(label, keys=(), required=(), key=None):
     if st.session_state.error:
         st.warning(st.session_state.error)
-    st.button(label, type="primary", width="stretch",
+    st.button(label, type="primary", width="stretch", key=key,
               on_click=go_next, args=(list(keys), list(required), st.session_state.page))
 
 
@@ -262,7 +267,8 @@ def compute_scores():
 
     # 결과 유형
     a_high = s["A_pre_rate"] >= A_CUTOFF
-    b_high = s["B_pre_mean"] >= B_CUTOFF
+    n_agree = sum(1 for v in b_vals.values() if v >= 3)  # '약간 동의'(3) 이상 고른 문항 수
+    b_high = n_agree >= B_AGREE_MIN
     if a_high and not b_high:
         s["type"] = "factchecker"
     elif a_high and b_high:
@@ -427,7 +433,7 @@ def page_A1():
 def page_B():
     progress(0.76)
     part("PART 3 · 내 생각은")
-    st.write("SNS에서 한 여성의 호주 워홀 후기 게시물에 이런 댓글이 달려 있어요.")
+    st.write("SNS에서 한 여성의 호주 워킹홀리데이 후기 게시물에 이런 댓글이 달려 있어요.")
     st.markdown(f'<div class="comment"><b>user_2931</b><br>{COMMENT}</div>', unsafe_allow_html=True)
     st.radio(f"**10. {B1_TEXT}**", LIKERT_AGREE, index=None, key="B1", horizontal=True)
     st.divider()
@@ -471,7 +477,7 @@ def page_C():
 def page_D():
     progress(1.0)
     part("PART 5 · 사회는 어떨까")
-    st.write("마지막이에요. 이번엔 내 생각이 아니라, 우리 사회가 어떻다고 생각하는지 골라주세요.")
+    st.write("이번엔 내 생각이 아니라, 우리 사회가 어떻다고 생각하는지 골라주세요.")
     for i, (k, text) in enumerate(D_ITEMS, start=19):
         st.radio(f"**{i}. {text}**", LIKERT_AGREE, index=None, key=k, horizontal=True)
         st.write("")
@@ -482,6 +488,11 @@ def page_D():
 def page_result():
     s = compute_scores()
     t = RESULT_TYPES[s["type"]]
+    st.markdown(
+        '<div class="notdone"><b>⚠️ 아직 끝나지 않았어요!</b><br>'
+        '결과를 확인한 뒤, 맨 아래 버튼을 눌러 <b>마지막 단계</b>까지 꼭 진행해 주세요.</div>',
+        unsafe_allow_html=True,
+    )
     badge_html = "".join(f'<span class="badge">{BADGES[b][0]}</span>' for b in s["badges"].split(",") if b)
     st.markdown(
         f'<div class="hero"><p>이번 응답에서 나타난 판단 경향</p>'
@@ -504,7 +515,10 @@ def page_result():
 
     st.markdown(f'<div class="note">{CLOSING_NOTE}</div>', unsafe_allow_html=True)
     st.write("")
-    next_button("다음 이야기로")
+    st.markdown('<div class="notdone" style="text-align:center"><b>👇 테스트가 아직 남아 있어요</b><br>'
+                '이어지는 짧은 이야기와 마지막 질문까지 답해야 응답이 저장돼요.</div>',
+                unsafe_allow_html=True)
+    next_button("다음 이야기로 계속하기 →", key="result_next")
 
 
 def page_I1():
@@ -521,8 +535,8 @@ def page_I1():
 
 def page_I2():
     part("STEP 2 / 4")
-    st.write("몇 달 뒤, 동생이 워홀 현지에서 열심히 일하고 생활하는 브이로그 영상을 유튜브에 올렸습니다.")
-    st.markdown('<div class="card"><b>[호주 워홀 브이로그] 카페 출근부터 퇴근까지</b><br><span style="font-size:13px;color:#5B6078">동생의 채널</span></div>',
+    st.write("몇 달 뒤, 동생이 현지에서 열심히 일하고 생활하는 브이로그 영상을 유튜브에 올렸습니다.")
+    st.markdown('<div class="card"><b>[호주 브이로그] 카페 출근부터 퇴근까지</b><br><span style="font-size:13px;color:#5B6078">동생의 채널</span></div>',
                 unsafe_allow_html=True)
     st.write("그런데, 그 영상에 사람들이 이와 같은 **익명의 악플**을 달았습니다.")
     st.markdown('<div class="comment" style="border-color:#E4B4B4"><b>방구석악플러1</b><br>'
@@ -554,7 +568,7 @@ def page_I4():
     part("STEP 4 / 4")
     st.markdown(
         '<div class="hero"><h1 style="font-size:28px">방금 당신이 지켜낸 건<br>비단 당신의 동생뿐만이 아닙니다.</h1>'
-        '<p>우리가 앞서 무의식적으로 평가했던 익명의 워홀 여성들도, 누군가에게는 이토록 응원받아야 마땅한 소중한 가족이자 친구입니다.</p><br>'
+        '<p>우리가 앞서 무의식적으로 평가했던 익명의 워킹홀리데이 여성들도, 누군가에게는 이토록 응원받아야 마땅한 소중한 가족이자 친구입니다.</p><br>'
         '<p>당신이 악플러에게 남긴 그 멋진 반박처럼, 타인의 낯선 궤적을 편견 대신 <span class="mark">\'용기\'</span>라는 두 글자로 바라봐 주는 사회가 되기를 바랍니다.</p></div>',
         unsafe_allow_html=True,
     )
