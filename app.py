@@ -365,6 +365,9 @@ def save_response():
     """구글 시트에 저장. 설정이 없거나 실패하면 responses.csv에 백업."""
     if st.session_state.saved:
         return
+    # 전송 '전에' 저장 표시부터 해둠: 저장 중에 화면이 다시 그려져도(버튼 연타, 재접속 등)
+    # 같은 응답을 또 보내지 않게
+    st.session_state.saved = True
     row = build_row()
     try:
         ok = save_to_sheet(row)
@@ -373,7 +376,6 @@ def save_response():
         print("구글 시트 저장 실패:", e)
     if not ok:
         save_to_csv(row)
-    st.session_state.saved = True
 
 
 # ─────────────────────────────────────────────
